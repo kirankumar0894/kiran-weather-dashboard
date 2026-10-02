@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A real-time, responsive weather dashboard with live atmospheric metrics, 24-hour hourly outlook, and 7-day forecast powered by Open-Meteo.">
+  <meta name="theme-color" content="#1a0b2e">
+  <title>Aether | Real-Time Weather Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-day">
+  <!-- Dynamic Ambient Purple Glow Orbs -->
+  <div class="ambient-wrapper" aria-hidden="true">
+    <div class="ambient-orb orb-primary"></div>
+    <div class="ambient-orb orb-secondary"></div>
+    <div class="ambient-orb orb-tertiary"></div>
+    <div class="ambient-noise"></div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Top App Navigation / Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon-wrapper" aria-hidden="true">
+          <svg class="brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            <path class="brand-sparkle" d="m19 5 1 2 2 1-2 1-1 2-1-2-2-1 2-1z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">Aether<span class="brand-highlight">Weather</span></h1>
+          <p class="brand-subtitle">Real-Time Atmospheric Intelligence</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Live Connection Status Badge -->
+        <div id="connection-status" class="status-badge status-online" title="Network status">
+          <span class="status-dot"></span>
+          <span class="status-label" id="connection-label">Live</span>
+        </div>
+
+        <!-- Metric / Imperial Unit Toggle -->
+        <div class="unit-toggle-wrapper">
+          <label for="unit-switch" class="sr-only">Toggle Temperature and Speed Units</label>
+          <button id="unit-switch" class="unit-switch" role="switch" aria-checked="false" aria-label="Toggle units between Celsius and Fahrenheit">
+            <span class="unit-option" id="unit-c">°C, km/h</span>
+            <span class="unit-slider" aria-hidden="true"></span>
+            <span class="unit-option" id="unit-f">°F, mph</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Search Section -->
+    <section class="search-section" aria-label="Search City">
+      <form id="search-form" class="search-form" role="search" novalidate>
+        <div class="search-input-group">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input 
+            type="search" 
+            id="search-input" 
+            class="search-input" 
+            placeholder="Search any city (e.g. Chennai, London, Tokyo, New York)..." 
+            autocomplete="off" 
+            spellcheck="false"
+            aria-label="City name"
+            aria-autocomplete="none"
+          />
+          <button type="button" id="clear-search-btn" class="clear-btn hidden" aria-label="Clear search input">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <button type="submit" id="search-btn" class="search-submit-btn" aria-label="Perform search">
+            <span class="btn-text">Search</span>
+            <span class="btn-loader hidden" aria-hidden="true">
+              <span class="spinner-circle"></span>
+            </span>
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Recent Searches Chips Bar -->
+      <div id="recent-searches-container" class="recent-searches-container" aria-label="Recent searches">
+        <div class="recent-header">
+          <span class="recent-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Recent Locations:
+          </span>
+          <button type="button" id="clear-recent-btn" class="clear-recent-link hidden" aria-label="Clear all recent searches">Clear all</button>
+        </div>
+        <div id="recent-chips-list" class="recent-chips-list" role="list">
+          <!-- Dynamically populated chips -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Banner (Accessible ARIA Live Alert) -->
+    <div id="error-banner" class="error-banner hidden" role="alert" aria-live="assertive">
+      <div class="error-content">
+        <div class="error-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="error-text-wrap">
+          <p id="error-title" class="error-title">Unable to retrieve weather data</p>
+          <p id="error-message" class="error-message">An unexpected error occurred. Please try again.</p>
+        </div>
+      </div>
+      <div class="error-actions">
+        <button type="button" id="retry-btn" class="retry-btn">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19"/>
+          </svg>
+          Retry
+        </button>
+        <button type="button" id="dismiss-error-btn" class="dismiss-btn" aria-label="Dismiss error notification">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" aria-live="polite">
+      <!-- Loading Skeleton Screen -->
+      <section id="loading-skeleton" class="skeleton-dashboard hidden" aria-hidden="true">
+        <div class="skeleton-hero-card">
+          <div class="skeleton-shimmer skeleton-title-pill"></div>
+          <div class="skeleton-shimmer skeleton-location-text"></div>
+          <div class="skeleton-hero-body">
+            <div class="skeleton-shimmer skeleton-circle"></div>
+            <div class="skeleton-shimmer skeleton-big-temp"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-row-pill"></div>
+        </div>
+        <div class="skeleton-metrics-grid">
+          <div class="skeleton-shimmer skeleton-metric-card"></div>
+          <div class="skeleton-shimmer skeleton-metric-card"></div>
+          <div class="skeleton-shimmer skeleton-metric-card"></div>
+          <div class="skeleton-shimmer skeleton-metric-card"></div>
+        </div>
+        <div class="skeleton-shimmer skeleton-strip"></div>
+        <div class="skeleton-shimmer skeleton-forecast-block"></div>
+      </section>
+
+      <!-- Dynamic Weather Dashboard (Populated via JS) -->
+      <div id="weather-display" class="weather-display">
+        <!-- Rendered dynamically -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <p>Live meteorological data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo API</a> (No API Key Required).</p>
+        <p class="footer-hint"><kbd>/</kbd> to search anytime &bull; Pure ES6+ Vanilla Architecture</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Center -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
